@@ -2,19 +2,19 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>【無料】マックで遊ぶ暇つぶしジャンプゲーム</title>
     <style>
-        body { text-align: center; font-family: sans-serif; background: #f0f0f0; margin-top: 50px; }
-        canvas { background: #fff; border: 2px solid #333; display: block; margin: 0 auto; }
-        h1 { color: #333; }
-        p { color: #666; }
+        body { text-align: center; font-family: sans-serif; background: #f0f0f0; margin-top: 50px; touch-action: manipulation; }
+        canvas { background: #fff; border: 2px solid #333; display: block; margin: 0 auto; max-width: 100%; height: auto; }
+        h1 { color: #333; font-size: 24px; }
+        p { color: #666; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <h1>暇つぶしジャンプゲーム</h1>
-    <p>画面をクリックして障害物をジャンプで避けろ！</p>
+    <p>画面をタップ（クリック）して障害物をジャンプで避けろ！</p>
     <canvas id="gameCanvas" width="600" height="200"></canvas>
     <h2 id="scoreLabel">Score: 0</h2>
 
@@ -29,14 +29,21 @@
         let score = 0;
         let isGameOver = false;
 
-        // ジャンプの操作（画面クリック）
-        window.addEventListener("click", () => {
+        // ジャンプの処理を関数にまとめる
+        function handleJump(e) {
+            if (e) e.preventDefault(); // スマホでダブルタップした時にズームするのを防ぐ
+            
             if (player.isGrounded && !isGameOver) {
                 player.dy = player.jumpForce;
                 player.isGrounded = false;
             }
-            if (isGameOver) { resetGame(); } // ゲームオーバー時にクリックでリスタート
-        });
+            if (isGameOver) { resetGame(); }
+        }
+
+        // パソコン用のクリックイベント
+        window.addEventListener("mousedown", handleJump);
+        // スマホ用のタップイベント（ここを追加！）
+        window.addEventListener("touchstart", handleJump, { passive: false });
 
         function resetGame() {
             player.y = 150; player.dy = 0; player.isGrounded = true;
@@ -48,48 +55,41 @@
         function loop() {
             if (isGameOver) return;
 
-            // 画面クリア
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 重力の計算
             player.dy += player.gravity;
             player.y += player.dy;
 
-            // 地面との当たり判定
             if (player.y >= 150) {
                 player.y = 150;
                 player.dy = 0;
                 player.isGrounded = true;
             }
 
-            // 障害物の移動
             obstacle.x -= obstacle.speed;
             if (obstacle.x < -obstacle.size) {
                 obstacle.x = 600;
                 score++;
-                obstacle.speed += 0.5; // 徐々に速くする
+                obstacle.speed += 0.5;
                 document.getElementById("scoreLabel").innerText = "Score: " + score;
             }
 
-            // 衝突判定
             if (obstacle.x < player.x + player.size &&
                 obstacle.x + obstacle.size > player.x &&
                 obstacle.y < player.y + player.size) {
                 isGameOver = true;
                 ctx.fillStyle = "black";
-                ctx.font = "30px sans-serif";
-                ctx.fillText("GAME OVER (クリックでリスタート)", 80, 110);
+                ctx.font = "24px sans-serif";
+                ctx.fillText("GAME OVER (タップでリスタート)", 80, 110);
                 return;
             }
 
-            // 描画
-            ctx.fillStyle = "#007AFF"; // プレイヤー（Appleっぽい青）
+            ctx.fillStyle = "#007AFF";
             ctx.fillRect(player.x, player.y, player.size, player.size);
 
-            ctx.fillStyle = "#FF3B30"; // 障害物（赤）
+            ctx.fillStyle = "#FF3B30";
             ctx.fillRect(obstacle.x, obstacle.y, obstacle.size, obstacle.size);
 
-            // 地面
             ctx.fillStyle = "#333";
             ctx.fillRect(0, 180, canvas.width, 2);
 
